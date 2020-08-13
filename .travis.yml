@@ -1,24 +1,28 @@
 language: java
-sudo: true
-dist: trusty
 
-install:
-    # Add repos
-    - sudo apt-add-repository "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
-    # Remove "deb-src" repos added from apt-add-repository, because it doesn't exist online
-    - sudo sed -i s/deb-src.*google.*//g /etc/apt/sources.list
-    # Add apt-keys for checking the packages
-    - wget -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-    # Mke sure
-    - sudo apt-get update -qq
-    # Install the browsers
-    - sudo apt-get install -y google-chrome-stable
+os: linux
+
+dist: xenial
+
+install: true
+
+services:
+    - xvfb
+
+git:
+    depth: false
+
+addons:
+    chrome: stable
+    firefox: latest
+    sonarcloud:
+        organization: $SONARCLOUD_ORGANIZATION
+        token: $SONAR_TOKEN
 
 before_script:
-    # start xvfb
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
-    - sleep 3 # give xvfb some time to start
+    - export DISPLAY=:99.0
 
 script:
-    - mvn -DheadlessEnvironment=true verify
+    - mvn test
+    - bash <(curl -s https://codecov.io/bash)
+    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mvn sonar:sonar; fi
